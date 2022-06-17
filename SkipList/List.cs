@@ -40,7 +40,6 @@ namespace SkipList
 
             ConnectNodes(temp, newNode, temp.Next);
 
-            //addd the compare tos right under
             while(temp.Value.CompareTo(temp.Down.Value) > 0)
             {
                 temp = temp.Down;
@@ -55,6 +54,8 @@ namespace SkipList
                 return;
             }
         }
+
+
         private void ConnectNodes(Node<T> Down, Node<T> newNode, Node<T> next)
         {
             newNode.Next = next;
@@ -76,7 +77,19 @@ namespace SkipList
             
             while(curr.Down != null)
             {
-
+                if (curr.Value.CompareTo(value) > 0)
+                {
+                    curr = curr.Down;
+                    curr.Height--;
+                }
+                if (curr.Value.CompareTo(value) > 0)
+                {
+                    curr = curr.Next;
+                }
+                if (curr.Value.CompareTo(value) == 0)
+                {
+                    curr.Height--;
+                }
             }
             if (curr.Height == -1)
             {
