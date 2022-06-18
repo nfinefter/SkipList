@@ -15,60 +15,64 @@ namespace SkipList
 
         public List()
         {
-            Head = new Node<T>(default);
-            Head.Height = 1;
+            Head = new Node<T>(default, 1);
         }
 
-        public Node<T> CreateLayers(T value)
+        private Node<T> CreateColumn(T value, int height)
         {
-            Node<T> newNode = new Node<T>(value);
-            newNode.Height = ChooseRandomHeight();
+            Node<T> newNode = new Node<T>(value, height);
+            Node<T> curr = newNode;
+
+            for (int i = 0; i < height - 1; i++)
+            {
+                curr.Down = new Node<T>(value, curr.Height - 1);
+                curr = curr.Down;
+            }
 
             return newNode;
         }
+
+        //public Node<T> CreateLayers(T value)
+        //{
+        //    Node<T> newNode = new Node<T>(value);
+        //    newNode.Height = ChooseRandomHeight();
+
+        //    return newNode;
+        //}
             // Creates a linked list of nodes with point down of height
 
+
+        //fix head to make it a linked list
         public void Insert(T value)
         {
             Node<T> temp = Head;
-            Node<T> newNode = CreateLayers(value);
+            Node<T> newNode = CreateColumn(value, ChooseRandomHeight());
 
-            while (temp.Height != newNode.Height && temp.Down != null)
+            while (temp.Height != newNode.Height)
             {
-                temp = temp.Down;
-            }
-
-            ConnectNodes(temp, newNode, temp.Next);
-
-            while(temp.Value.CompareTo(temp.Down.Value) > 0)
-            {
-                temp = temp.Down;
-                while(temp.Next != null)
+                while (temp.Next != null && value.CompareTo(temp.Next.Value) > 0)
                 {
                     temp = temp.Next;
                 }
+                temp = temp.Down;
             }
 
-            if (temp.Height == -1)
+            newNode.Next = temp.Next;
+            temp.Next = newNode;
+
+            while (temp.Height > 1)
             {
-                return;
-            }
-        }
-
-
-        private void ConnectNodes(Node<T> Down, Node<T> newNode, Node<T> next)
-        {
-            newNode.Next = next;
-            newNode.Down = Down;
-
-            newNode.Down.Next = newNode; 
-
-            if (newNode.Next != null)
-            {
-                newNode.Next.Down = newNode;
-
+                temp = temp.Down;
+                newNode = newNode.Down;
+                while (temp.Next != null && value.CompareTo(temp.Next.Value) > 0)
+                {
+                    temp = temp.Next;
+                }
+                newNode.Next = temp.Next;
+                temp.Next = newNode;
             }
 
+         
         }
 
         public void Remove(T value)
@@ -100,16 +104,17 @@ namespace SkipList
 
         public int ChooseRandomHeight()
         {
-            int Height = 0;
+            int Height = 1;
             Random rand = new Random();
 
-            while (rand.Next(0, 2) == 1 && Height <= Head.Height + 1)
+            while (rand.Next(1, 3) == 1 && Height <= Head.Height + 1)
             {
+                Height++;
                 while (Height > Head.Height)
                 {
                     Head.Height++;
                 }
-                Height++;
+                
             }
         
             return Height;

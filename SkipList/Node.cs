@@ -13,9 +13,10 @@ namespace SkipList
         public Node<T> Next;
         public Node<T> Down;
 
-        public Node(T value)
+        public Node(T value, int height)
         {
             Value = value;
+            Height = height;
         }
 
     
