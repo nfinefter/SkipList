@@ -113,6 +113,9 @@ namespace SkipList
                 while (Height > Head.Height)
                 {
                     Head.Height++;
+                    Head.Down = new Node<T>(default, Height);
+                    Head = Head.Down;
+                    //Does this make head a linked list?
                 }
                 
             }
