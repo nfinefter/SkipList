@@ -5,13 +5,15 @@ using System.Text;
 
 namespace SkipList
 {
-    class List<T> : IEnumerable<T> where T : IComparable<T>
+    class List<T> : IEnumerable<T> , ICollection<T>  where T : IComparable<T>
     {
         public int Count;
 
         public Node<T> Head;
 
-      
+        int ICollection<T>.Count => Count;
+
+        public bool IsReadOnly => false;
 
         public List()
         {
@@ -45,8 +47,9 @@ namespace SkipList
         //fix head to make it a linked list
         public void Insert(T value)
         {
-            Node<T> temp = Head;
+
             Node<T> newNode = CreateColumn(value, ChooseRandomHeight());
+            Node<T> temp = Head;
 
             while (temp.Height != newNode.Height)
             {
@@ -57,48 +60,114 @@ namespace SkipList
                 temp = temp.Down;
             }
 
-            newNode.Next = temp.Next;
-            temp.Next = newNode;
+            //newNode.Next = temp.Next;
+            //temp.Next = newNode;
 
-            while (temp.Height > 1)
+            //while (temp.Height > 1) // this should be while temp.Height > 0
+            while (temp != null)
             {
-                temp = temp.Down;
-                newNode = newNode.Down;
-                while (temp.Next != null && value.CompareTo(temp.Next.Value) > 0)
+                //while (temp.Next != null && value.CompareTo(temp.Next.Value) > 0)
+                if (CompareToNext(value, temp) > 0)
                 {
                     temp = temp.Next;
                 }
-                newNode.Next = temp.Next;
-                temp.Next = newNode;
+                
+               
+
+                //while (temp.Down != null && value.CompareTo(temp.Next.Value) <= 0)
+                else if (CompareToNext(value, temp) <= 0)
+                {
+                    ConnectNodes(temp, newNode, temp.Next);
+                    
+                    //newNode.Next = temp.Next;
+                    //temp.Next = newNode;
+
+                    temp = temp.Down;
+                    newNode = newNode.Down;
+                }
+              
+                
             }
 
          
         }
 
-        public void Remove(T value)
+        private int CompareToNext(T value, Node<T> temp)
         {
-            Node<T> curr = Head;
-            
-            while(curr.Down != null)
+            if (temp.Next == null)
             {
-                if (curr.Value.CompareTo(value) > 0)
+                return -1;
+            }
+
+            return value.CompareTo(temp.Next.Value);
+        }
+
+        private void ConnectNodes(Node<T> prev, Node<T> node, Node<T> next)
+        {
+            node.Next = next;
+            prev.Next = node;
+        }
+        private void ConnectNodes(Node<T> prev, Node<T> next)
+        {
+            prev.Next = next;            
+        }
+        public bool Delete(T value)
+        {
+            Node<T> temp = Head;
+            bool Deleted = false;
+
+            while(temp != null)
+            {
+                if (CompareToNext(value, temp) > 0)
                 {
-                    curr = curr.Down;
-                    curr.Height--;
+                    temp = temp.Next;
                 }
-                if (curr.Value.CompareTo(value) > 0)
+
+
+
+                //while (temp.Down != null && value.CompareTo(temp.Next.Value) <= 0)
+                else if (CompareToNext(value, temp) < 0)
                 {
-                    curr = curr.Next;
+                    temp = temp.Down;
+                   
+                    
                 }
-                if (curr.Value.CompareTo(value) == 0)
+                else if (CompareToNext(value, temp) == 0)
                 {
-                    curr.Height--;
+                    ConnectNodes(temp, temp.Next.Next);
+                    Deleted = true;
+                }
+                
+            }
+            return Deleted;
+          
+        }
+        public bool Contains(T value)
+        {
+            Node<T> temp = Head;
+
+            while (temp != null)
+            {
+                if (CompareToNext(value, temp) > 0)
+                {
+                    temp = temp.Next;
+                }
+
+
+
+                //while (temp.Down != null && value.CompareTo(temp.Next.Value) <= 0)
+                else if (CompareToNext(value, temp) < 0)
+                {
+                    temp = temp.Down;
+
+
+                }
+                else if (CompareToNext(value, temp) == 0)
+                {
+                    return true;
                 }
             }
-            if (curr.Height == -1)
-            {
-                return;
-            }
+            return false;
         }
 
 
@@ -110,12 +179,11 @@ namespace SkipList
             while (rand.Next(1, 3) == 1 && Height <= Head.Height + 1)
             {
                 Height++;
-                while (Height > Head.Height)
+                while (Height > Head.Height) // Height = 1, Height > 2     4 -> 4 -> 1
                 {
-                    Head.Height++;
-                    Head.Down = new Node<T>(default, Height);
-                    Head = Head.Down;
-                    //Does this make head a linked list?
+                    Node<T> temp = new Node<T>(default, Height);
+                    temp.Down = Head;
+                    Head = temp;
                 }
                 
             }
@@ -126,13 +194,14 @@ namespace SkipList
         public IEnumerator<T> GetEnumerator()
         {
 
-            Node<T> curr = Head.Next;
+            Node<T> curr = Head;
 
             while (curr.Down != null)
             {
                 
                 curr = curr.Down;
             }
+
             while (curr.Next != null)
             {
                 curr = curr.Next;
@@ -144,6 +213,57 @@ namespace SkipList
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+        public override string ToString()
+        {
+            int height = Head.Height;
+            string skipList = "";
+            Node<T> temp = Head;
+            Node<T> curr = Head;
+            while (height > 0)
+            {
+                
+                while (temp != null)
+                {
+                    skipList += temp.Value;
+                    temp = temp.Next;
+                }
+                skipList += "\n";
+                curr = curr.Down;
+                temp = curr;
+                height--;
+            }
+
+            return skipList;
+        }
+
+        public void Add(T item)
+        {
+            Insert(item);
+        }
+
+        public void Clear()
+        {
+            Head = new Node<T>(default, 0);
+            Count = 0;
+        }
+
+        public void CopyTo(T[] array, int arrayIndex)
+        {
+            foreach (T item in this)
+            {
+                array[arrayIndex++] = item;
+            }
+
+            //for (; arrayIndex < array.Length; arrayIndex++)
+            //{
+            //    array[arrayIndex] = (T)GetEnumerator();
+            //}
+        }
+
+        bool ICollection<T>.Remove(T item)
+        {
+            return Delete(item);
         }
     }
 }
